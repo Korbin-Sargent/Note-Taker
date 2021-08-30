@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 3001;
 const path = require("path");
+const data = require("./db.json")
 
 //sets up server to handle requests coming in the way we want them to
 app.use(express.urlencoded({ extended: true }));
@@ -19,13 +20,11 @@ app.get("/notes", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notes.html"))
 })
 
-app.ge("/api/notes")
-
 //define routes using (network tab, inside index.js)
 
 app.listen(PORT, () => {
     console.log("server is listening on port", PORT)
-});
+})
 
 //read from db file (get an array), write to the file for post,
 //define routes as needed to update json file
