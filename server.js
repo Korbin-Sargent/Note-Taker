@@ -1,8 +1,14 @@
+// const { randomUUID } = require("crypto");
 const express = require("express");
+const fs = require("fs");
+const util = require('util');
 const app = express();
 const PORT = 3001;
 const path = require("path");
-const data = require("./db.json")
+// const noteData = require("./db.json")
+const uuid = require("./helpers/uuid")
+
+const readFromFile = util.promisify(fs.readFile);
 
 //sets up server to handle requests coming in the way we want them to
 app.use(express.urlencoded({ extended: true }));
@@ -20,7 +26,63 @@ app.get("/notes", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notes.html"))
 })
 
+// /**
+//  *  Function to write data to the JSON file given a destination and some content
+//  *  @param {string} destination The file you want to write to.
+//  *  @param {object} content The content you want to write to the file.
+//  *  @returns {void} Nothing
+//  */
+
+app.get('/api/notes', (req, res) => {
+  console.info(`${req.method} request received for notes`);
+  readFromFile('./db.json').then((data) => res.json(JSON.parse(data)));
+});
 //define routes using (network tab, inside index.js)
+
+
+const writeToFile = (destination, content) =>
+  fs.writeFile(destination, JSON.stringify(content, null, 4), (err) =>
+    err ? console.error(err) : console.info(`\nData written to ${destination}`)
+  );
+
+const readAndAppend = (content, file) => {
+  fs.readFile(file, 'utf8', (err, data) => {
+    console.log(data);
+    if (err) {
+      console.error(err);
+    } else {
+      const parsedData = JSON.parse(data);
+      console.log(parsedData)
+      parsedData.push(content);
+      writeToFile(file, parsedData);
+    }
+  });
+};
+
+
+//responds to saveNotes POST request
+app.post("/api/notes", (req, res) => {
+console.info(`${req.method} request received to add a note`); 
+
+const { title, text} = req.body;
+
+if (title && text) {
+    const newNote = {
+        title,
+        text,
+        id: uuid(),
+    }
+    readAndAppend(newNote, "./db.json")
+    res.json(`Note added successfully 🚀`);
+  } else {
+    res.error('Error in adding tip');
+  }
+})
+
+app.get('*', function(req,res) {
+            res.sendFile(path.join(__dirname, "./public/index.html"));
+        });
+
 
 app.listen(PORT, () => {
     console.log("server is listening on port", PORT)
